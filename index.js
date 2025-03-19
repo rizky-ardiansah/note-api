@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/v1/auth', authRoutes)
-app.use('/api/v1/notes',)
+app.use('/api/v1/notes', noteRoutes)
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
