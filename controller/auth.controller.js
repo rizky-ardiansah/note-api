@@ -31,7 +31,7 @@ export const signUp = async (req, res) => {
             expiresIn: "3d",
         });
 
-        res.cookie("token", token, {
+        res.cookie("jwt-note", token, {
             httpOnly: true,
             maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
             secure: process.env.NODE_ENV === "production",
@@ -47,11 +47,61 @@ export const signUp = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 }
-export const login = async () => {
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
 
+        if (!email || !password) {
+            return res.status(400).json({ message: "Please fill all fields" });
+        }
+
+        if (!user) {
+            return res.status(400).json({ message: "Email or Password invalid" });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: "Email or Password invalid" });
+        }
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: "3d",
+        });
+
+        res.cookie("jwt-note", token, {
+            httpOnly: true,
+            maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User logged in successfully",
+            data: {
+                user: user,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
 }
-export const logout = async () => { }
+export const logout = async (req, res) => {
+    try {
+        res.clearCookie("jwt-note")
+        res.status(200).json({
+            success: true,
+            message: "User logged out successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
